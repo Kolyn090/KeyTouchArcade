@@ -1,9 +1,15 @@
+import math
+import tomllib
 import threading
 from enum import Enum
+from typing import Tuple
 from pynput import keyboard
 from pynput.mouse import Controller
 from src.identifier.key_proportions_manager import Key_Proportions_Manager
+from src.util.prop2pos import prop2pos
 from src.util.pos2prop import pos2prop
+from src.util.screen_getter import Screen_Getter
+from src.read.read_user_config import file_path
 
 
 class Key_Status(Enum):
@@ -20,6 +26,12 @@ class Mouse_Position_Recorder:
         self.running = True
         self.recorded = {}
         self.kpm = Key_Proportions_Manager()
+
+        with open(file_path, 'rb') as file:
+            config = tomllib.load(file)
+            config_window = config["window"]
+        screen_getter = Screen_Getter()
+        self.chosen_window = screen_getter.get_window_with_title(config_window["name"])
 
         self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.listener.start()
@@ -111,7 +123,14 @@ class Mouse_Position_Recorder:
         def clear_input_area():
             input(get_continue_message())
 
-        self.print_recorded_table()
+        def save(_key_proportions):
+            self.kpm.save_key_proportions(_key_proportions)
+
+        keys_status_and_key_proportions = self.get_keys_status_and_new_key_proportions()
+        keys_status = keys_status_and_key_proportions[0]
+        key_proportions = keys_status_and_key_proportions[1]
+
+        self.print_recorded_table(keys_status, key_proportions)
         clear_input_area()
 
         ask = input(get_ask_message())
@@ -119,10 +138,11 @@ class Mouse_Position_Recorder:
         if ask == 'n' or ask == 'N':
             print(get_discard_message())
         else:
+            save(key_proportions)
             print(get_save_message())
         return False
 
-    def print_recorded_table(self):
+    def print_recorded_table(self, keys_status, key_proportions):
         def pad_with(text, total_length, fill=' '):
             if len(text) >= total_length:
                 return text
@@ -142,10 +162,6 @@ class Mouse_Position_Recorder:
 
             return result
 
-        keys_status_and_key_proportions = self.get_keys_status_and_key_proportions()
-        keys_status = keys_status_and_key_proportions[0]
-        key_proportions = keys_status_and_key_proportions[1]
-
         len_longest_key = get_len_longest_key_among([self.recorded, key_proportions])
         if len_longest_key < len('Key'):
             len_longest_key = len('Key')
@@ -160,12 +176,10 @@ class Mouse_Position_Recorder:
         message = (f"{BOLD}{GREEN}\n{pad_with('Key', len_longest_key)} {RESET}"
                    f"{BOLD}{GREEN}| Value\n{pad_with('', len_longest_key+1, '-')}{RESET}"
                    f"{BOLD}{GREEN}|-------------------{RESET}\n")
+        curr_key_proportions = self.kpm.get_key_proportions()
 
         for key, key_status in keys_status.items():
-            if key in self.recorded:
-                value = self.recorded[key]
-            else:
-                value = key_proportions[key]
+            value = key_proportions[key]
             if key_status == Key_Status.NEW:
                 message += (f"{BOLD}{YELLOW}{pad_with(key, len_longest_key)} {GREEN}| "
                             f"{YELLOW}NEW: {value}{RESET}\n")
@@ -174,31 +188,49 @@ class Mouse_Position_Recorder:
                             f"UCD: {value}{RESET}\n")
             else: # Key_Status.CHANGED
                 message += (f"{BOLD}{RED}{pad_with(key, len_longest_key)} {GREEN}| "
-                            f"{RED}CHG: {key_proportions[key]} -> {value}{RESET}\n")
+                            f"{RED}CHG: {curr_key_proportions[key]} -> {value}{RESET}\n")
         print(message)
         # endregion
 
-    def get_keys_status_and_key_proportions(self) -> (dict[str, Key_Status], dict[str, list]):
+    def get_keys_status_and_new_key_proportions(self) -> (dict[str, Key_Status], dict[str, list]):
+        def are_lists_equal(list1, list2, rel_tol=1e-9, abs_tol=0.0):
+            if len(list1) != len(list2):
+                return False
+            return all(math.isclose(a, b, rel_tol=rel_tol, abs_tol=abs_tol) for a, b in zip(list1, list2))
+
         result = {}
         curr_key_proportions = self.kpm.get_key_proportions()
+        new_key_proportions = curr_key_proportions.copy()
 
         # Compare keys in system config with user mentioned keys
         for key, value in self.recorded.items():
             if key in curr_key_proportions:
-                if value == curr_key_proportions[key]:
+                new_prop = self.get_proportion_on_window_by_position(value)
+                if are_lists_equal(new_prop, curr_key_proportions[key]):
                     result[key] = Key_Status.UNCHANGED
                 else: # CHANGED
-                    # TODO: Need to calculate key proportions
                     result[key] = Key_Status.CHANGED
+                    new_prop = self.get_proportion_on_window_by_position(value)
+                    new_key_proportions[key] = [new_prop[0], new_prop[1]]
             else:
                 result[key] = Key_Status.NEW
+                new_prop = self.get_proportion_on_window_by_position(value)
+                new_key_proportions[key] = [new_prop[0], new_prop[1]]
 
         # Keys in system config but did not mention by user this time
         for key in curr_key_proportions.keys():
             if key not in self.recorded:
                 result[key] = Key_Status.UNCHANGED
 
-        return result, curr_key_proportions
+        return result, new_key_proportions
+
+    def get_position_on_window_by_proportion(self, prop) -> Tuple[int, int]:
+        result = prop2pos(self.chosen_window, prop)
+        return round(result[0], 2), round(result[1], 2)
+
+    def get_proportion_on_window_by_position(self, pos) -> Tuple[float, float]:
+        result = pos2prop(self.chosen_window, pos)
+        return round(result[0], 2), round(result[1], 2)
 
     @staticmethod
     def get_welcome_message():
@@ -220,3 +252,4 @@ if __name__ == '__main__':
         print(mpr.get_welcome_message())
         while mpr.running:
             mpr.stop_event.wait()
+
