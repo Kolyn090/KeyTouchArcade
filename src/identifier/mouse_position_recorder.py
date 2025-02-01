@@ -3,6 +3,7 @@ from enum import Enum
 from pynput import keyboard
 from pynput.mouse import Controller
 from src.identifier.key_proportions_manager import Key_Proportions_Manager
+from src.util.pos2prop import pos2prop
 
 
 class Key_Status(Enum):
@@ -128,8 +129,8 @@ class Mouse_Position_Recorder:
             padding_needed = total_length - len(text)
             return text + fill * padding_needed
 
-        def get_len_longest_key_among(ds):
-            def get_len_longest_key(_d):
+        def get_len_longest_key_among(ds: list[dict]):
+            def get_len_longest_key(_d: dict):
                 if not _d:
                     return 0
                 return max(len(str(_key)) for _key in _d.keys())
@@ -173,21 +174,26 @@ class Mouse_Position_Recorder:
                             f"UCD: {value}{RESET}\n")
             else: # Key_Status.CHANGED
                 message += (f"{BOLD}{RED}{pad_with(key, len_longest_key)} {GREEN}| "
-                            f"{value} -> {RED}CHG: {value}{RESET}\n")
+                            f"{RED}CHG: {key_proportions[key]} -> {value}{RESET}\n")
         print(message)
         # endregion
 
     def get_keys_status_and_key_proportions(self) -> (dict[str, Key_Status], dict[str, list]):
         result = {}
         curr_key_proportions = self.kpm.get_key_proportions()
+
+        # Compare keys in system config with user mentioned keys
         for key, value in self.recorded.items():
             if key in curr_key_proportions:
-                result[key] = Key_Status.UNCHANGED
-                # CHANGED
-                # TODO: Need to calculate key proportions
+                if value == curr_key_proportions[key]:
+                    result[key] = Key_Status.UNCHANGED
+                else: # CHANGED
+                    # TODO: Need to calculate key proportions
+                    result[key] = Key_Status.CHANGED
             else:
                 result[key] = Key_Status.NEW
 
+        # Keys in system config but did not mention by user this time
         for key in curr_key_proportions.keys():
             if key not in self.recorded:
                 result[key] = Key_Status.UNCHANGED
