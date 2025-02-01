@@ -46,7 +46,7 @@ class Mouse_Position_Recorder:
         if key_char in self.pressing:
             self.pressing.remove(key_char)
 
-        mouse_position = self.mouse.position
+        mouse_position = list(self.mouse.position)
         self.record(key_char, mouse_position)
 
     @staticmethod
@@ -122,45 +122,62 @@ class Mouse_Position_Recorder:
         return False
 
     def print_recorded_table(self):
-        def get_len_longest_key(d):
-            if not d:
-                return 0
-            return max(len(str(_key)) for _key in d.keys())
-
         def pad_with(text, total_length, fill=' '):
             if len(text) >= total_length:
                 return text
             padding_needed = total_length - len(text)
             return text + fill * padding_needed
 
+        def get_len_longest_key_among(ds):
+            def get_len_longest_key(_d):
+                if not _d:
+                    return 0
+                return max(len(str(_key)) for _key in _d.keys())
+
+            result = 0
+            for d in ds:
+                curr = get_len_longest_key(d)
+                result = max(result, curr)
+
+            return result
+
+        keys_status_and_key_proportions = self.get_keys_status_and_key_proportions()
+        keys_status = keys_status_and_key_proportions[0]
+        key_proportions = keys_status_and_key_proportions[1]
+
+        len_longest_key = get_len_longest_key_among([self.recorded, key_proportions])
+        if len_longest_key < len('Key'):
+            len_longest_key = len('Key')
+
+        # region PrintTable
         BOLD = "\033[1m"
         YELLOW = "\033[93m"
         RED = "\033[91m"
         GREEN = "\033[92m"
         RESET = "\033[0m"
 
-        len_longest_key = get_len_longest_key(self.recorded)
-        if len_longest_key < len('Key'):
-            len_longest_key = len('Key')
-
         message = (f"{BOLD}{GREEN}\n{pad_with('Key', len_longest_key)} {RESET}"
                    f"{BOLD}{GREEN}| Value\n{pad_with('', len_longest_key+1, '-')}{RESET}"
                    f"{BOLD}{GREEN}|-------------------{RESET}\n")
 
-        keys_status = self.get_keys_status()
-
-        # TODO: Use key_status for looping -> because some old keys might not be mentioned.
-        for key, value in self.recorded.items():
-            if keys_status[key] == Key_Status.NEW:
-                message += f"{BOLD}{YELLOW}{pad_with(key, len_longest_key)} {GREEN}| {YELLOW}{value}{RESET}\n"
-            elif keys_status[key] == Key_Status.UNCHANGED:
-                message += f"{BOLD}{GREEN}{pad_with(key, len_longest_key)} | {value}{RESET}\n"
+        for key, key_status in keys_status.items():
+            if key in self.recorded:
+                value = self.recorded[key]
+            else:
+                value = key_proportions[key]
+            if key_status == Key_Status.NEW:
+                message += (f"{BOLD}{YELLOW}{pad_with(key, len_longest_key)} {GREEN}| "
+                            f"{YELLOW}NEW: {value}{RESET}\n")
+            elif key_status == Key_Status.UNCHANGED:
+                message += (f"{BOLD}{GREEN}{pad_with(key, len_longest_key)} | "
+                            f"UCD: {value}{RESET}\n")
             else: # Key_Status.CHANGED
-                message += f"{BOLD}{RED}{pad_with(key, len_longest_key)} {GREEN}| {value} -> {RED}{value}{RESET}\n"
-
+                message += (f"{BOLD}{RED}{pad_with(key, len_longest_key)} {GREEN}| "
+                            f"{value} -> {RED}CHG: {value}{RESET}\n")
         print(message)
+        # endregion
 
-    def get_keys_status(self) -> dict[str, Key_Status]:
+    def get_keys_status_and_key_proportions(self) -> (dict[str, Key_Status], dict[str, list]):
         result = {}
         curr_key_proportions = self.kpm.get_key_proportions()
         for key, value in self.recorded.items():
@@ -172,10 +189,10 @@ class Mouse_Position_Recorder:
                 result[key] = Key_Status.NEW
 
         for key in curr_key_proportions.keys():
-            if key not in curr_key_proportions:
+            if key not in self.recorded:
                 result[key] = Key_Status.UNCHANGED
 
-        return result
+        return result, curr_key_proportions
 
     @staticmethod
     def get_welcome_message():
