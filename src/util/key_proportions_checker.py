@@ -33,4 +33,4 @@ if __name__ == '__main__':
         pos = prop2pos(chosen_window, prop)
         pos = [pos[0] - chosen_region[0], pos[1] - chosen_region[1]]
         cv2.circle(screenshot, pos, radius=2, color=(0, 0, 255), thickness=-1)
-        cv2.imwrite('dotted.png', screenshot)
+        cv2.imwrite('../debug_images/dotted.png', screenshot)
