@@ -1,8 +1,10 @@
 [window]
+name = "BlueStacks"
+
 # Window will be rescaled to this size after you applied
 # the default setup. (px)
-default_width = 788
-default_height = 438
+default_width = 797
+default_height = 481
 
 # Window will be moved to this position after you applied
 # the default setup.
@@ -13,7 +15,7 @@ default_left = 0
 # Crop out unwanted regions after rescaling has been applied.
 # Adjust this to ensure you have the correct proportion.
 # Check the result with screenshot_checker.py (px)
-crop_top = 0
+crop_top = 38
 crop_left = 0
 crop_bottom = 0
 crop_right = 0
