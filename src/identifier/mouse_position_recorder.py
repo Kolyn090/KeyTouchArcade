@@ -1,8 +1,8 @@
-import os
 import threading
 from enum import Enum
 from pynput import keyboard
 from pynput.mouse import Controller
+from src.identifier.key_proportions_manager import Key_Proportions_Manager
 
 
 class Key_Status(Enum):
@@ -18,6 +18,7 @@ class Mouse_Position_Recorder:
         self.pressing = set()
         self.running = True
         self.recorded = {}
+        self.kpm = Key_Proportions_Manager()
 
         self.listener = keyboard.Listener(on_press=self.on_press, on_release=self.on_release)
         self.listener.start()
@@ -114,10 +115,10 @@ class Mouse_Position_Recorder:
 
         ask = input(get_ask_message())
         ask = ask.strip()
-        if ask == '' or ask == 'y' or ask == 'Y':
-            print(get_save_message())
-        else:
+        if ask == 'n' or ask == 'N':
             print(get_discard_message())
+        else:
+            print(get_save_message())
         return False
 
     def print_recorded_table(self):
@@ -148,6 +149,7 @@ class Mouse_Position_Recorder:
 
         keys_status = self.get_keys_status()
 
+        # TODO: Use key_status for looping -> because some old keys might not be mentioned.
         for key, value in self.recorded.items():
             if keys_status[key] == Key_Status.NEW:
                 message += f"{BOLD}{YELLOW}{pad_with(key, len_longest_key)} {GREEN}| {YELLOW}{value}{RESET}\n"
@@ -160,8 +162,18 @@ class Mouse_Position_Recorder:
 
     def get_keys_status(self) -> dict[str, Key_Status]:
         result = {}
+        curr_key_proportions = self.kpm.get_key_proportions()
         for key, value in self.recorded.items():
-            result[key] = Key_Status.UNCHANGED
+            if key in curr_key_proportions:
+                result[key] = Key_Status.UNCHANGED
+                # CHANGED
+                # TODO: Need to calculate key proportions
+            else:
+                result[key] = Key_Status.NEW
+
+        for key in curr_key_proportions.keys():
+            if key not in curr_key_proportions:
+                result[key] = Key_Status.UNCHANGED
 
         return result
 

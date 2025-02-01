@@ -1,0 +1,19 @@
+[window]
+# Window will be rescaled to this size after you applied
+# the default setup. (px)
+default_width = 788
+default_height = 438
+
+# Window will be moved to this position after you applied
+# the default setup.
+# Margined to the top-left corner of the window. (px)
+default_top = 0
+default_left = 0
+
+# Crop out unwanted regions after rescaling has been applied.
+# Adjust this to ensure you have the correct proportion.
+# Check the result with screenshot_checker.py (px)
+crop_top = 0
+crop_left = 0
+crop_bottom = 0
+crop_right = 0
