@@ -16,3 +16,7 @@ def reset_system_config():
 
     with open(file_path, 'w') as file:
         json.dump(data, file, indent=4)
+
+
+if __name__ == "__main__":
+    reset_system_config()

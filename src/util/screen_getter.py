@@ -48,6 +48,14 @@ class Screen_Getter:
         return left, top, height, width
 
     @staticmethod
+    def get_screenshot_of_chosen_window(window) -> Image.Image:
+        x = window.left
+        y = window.top
+        h = window.height
+        w = window.width
+        return ImageGrab.grab(bbox=(x, y, w+x, h+y))
+
+    @staticmethod
     def get_screenshot_of_chosen_region(region) -> Image.Image:
         x = region[0]
         y = region[1]
@@ -60,7 +68,7 @@ class Screen_Getter:
         cv_screenshot = np.array(pil_screenshot)
         return cv2.cvtColor(cv_screenshot, cv2.COLOR_RGB2BGR)
 
-
+"""
 if __name__ == '__main__':
     with open(file_path, 'rb') as file:
         config = tomllib.load(file)
@@ -71,3 +79,4 @@ if __name__ == '__main__':
     curr_region = (chosen_window.left, chosen_window.top, chosen_window.height, chosen_window.width)
     chosen_region = screen_getter.get_cropped_window_region(chosen_window)
     screenshot = screen_getter.get_screenshot_of_chosen_region(chosen_region)
+"""
