@@ -1,7 +1,6 @@
-import json
 import tomllib
 import atexit
-from src.read import read_user_config, read_system_config
+from src.read import read_user_config
 from src.util.screen_getter import Screen_Getter
 from src.control.gamepad import Gamepad
 from src.control.joystick import Joystick
@@ -12,16 +11,18 @@ if __name__ == '__main__':
     with open(read_user_config.file_path, 'rb') as file:
         config = tomllib.load(file)
         config_window = config["window"]
+        config_joystick = config["joystick"]
 
     screen_getter = Screen_Getter()
     chosen_window = screen_getter.get_window_with_title(config_window["name"])
 
-    with open(read_system_config.file_path, 'r') as file:
-        data = json.load(file)
-        key_properties = data["system"]["key-proportions"]
-
-    joystick_pos = prop2pos(chosen_window, key_properties["joy-stick"])
-    joystick = Joystick(joystick_pos, y_factor=1.0)
+    joystick_x_factor = config_joystick["x_factor"]
+    joystick_y_factor = config_joystick["y_factor"]
+    joystick_pos = prop2pos(chosen_window, (
+        config_joystick["x_proportion"],
+        config_joystick['y_proportion']
+    ))
+    joystick = Joystick(joystick_pos, x_factor=joystick_x_factor, y_factor=joystick_y_factor)
     gamepad = Gamepad(chosen_window)
 
     atexit.register(joystick.cleanup)

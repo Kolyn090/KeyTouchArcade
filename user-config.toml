@@ -1,5 +1,5 @@
 [window]
-name = "Pvz 2"
+name = "BlueStacks"
 
 # Window will be rescaled to this size after you applied
 # the default setup. (px)
@@ -22,3 +22,13 @@ crop_right = 0
 
 [system-config]
 path = 'system-config.json'
+
+[joystick]
+# Controls the angle of turning
+# x_factor and y_factor could be useful if you are playing a bird-view game.
+x_factor = 1.0
+y_factor = 1.0
+
+# The proportion to the position of joystick on the screen
+x_proportion = 0.25
+y_proportion = 0.75
