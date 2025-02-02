@@ -12,6 +12,7 @@ if __name__ == '__main__':
         config = tomllib.load(file)
         config_window = config["window"]
         config_joystick = config["joystick"]
+        config_gamepad = config["gamepad"]
 
     screen_getter = Screen_Getter()
     chosen_window = screen_getter.get_window_with_title(config_window["name"])
@@ -23,7 +24,7 @@ if __name__ == '__main__':
         config_joystick['y_proportion']
     ))
     joystick = Joystick(joystick_pos, x_factor=joystick_x_factor, y_factor=joystick_y_factor)
-    gamepad = Gamepad(chosen_window)
+    gamepad = Gamepad(chosen_window, config_gamepad["keep_click_list"])
 
     atexit.register(joystick.cleanup)
     atexit.register(gamepad.cleanup)

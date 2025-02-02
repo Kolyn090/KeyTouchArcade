@@ -32,3 +32,8 @@ y_factor = 1.0
 # The proportion to the position of joystick on the screen
 x_proportion = 0.25
 y_proportion = 0.75
+
+[gamepad]
+# Long-pressing the keys in list will result in continuous clicks
+# item: [key, rest-interval]
+keep_click_list = [["j", 0.25]]
