@@ -86,6 +86,9 @@ class Joystick:
                         new_pos_y = result_y
         self.mouse.position = (int(new_pos_x), int(new_pos_y))
 
+    def cleanup(self):
+        self.process.join()
+
 
 if __name__ == '__main__':
     with open(read_user_config.file_path, 'rb') as file:

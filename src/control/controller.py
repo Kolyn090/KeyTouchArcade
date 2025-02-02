@@ -23,8 +23,9 @@ if __name__ == '__main__':
 
     joystick_pos = prop2pos(chosen_window, key_properties["joy-stick"])
     joystick = Joystick(joystick_pos, y_factor=1.0)
-
     gamepad = Gamepad(chosen_window)
+
+    atexit.register(joystick.cleanup)
     atexit.register(gamepad.cleanup)
 
     joystick.process.start()

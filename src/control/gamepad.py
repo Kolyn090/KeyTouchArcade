@@ -24,7 +24,6 @@ class Gamepad:
         self.process.daemon = False
 
     def work(self):
-        print("Started working")
         """Starts the keyboard listener."""
         script_dir = os.path.dirname(os.path.abspath(__file__))
         dll_path = os.path.join(script_dir, './mouse/mice.dll')
@@ -68,18 +67,8 @@ class Gamepad:
             self.mouse_c.vmulti_disconnect(self.vmulti_client)
             self.mouse_c.vmulti_free(self.vmulti_client)
             print("Disconnected and freed mouse_c.")
-
-    def __enter__(self):
-        print("entering")
-        self.process.start()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        print('cleaning up...')
-        # self.cleanup()
-        if self.process.is_alive():
-            self.process.terminate()
         self.process.join()
+
 
 if __name__ == '__main__':
     with open(read_user_config.file_path, 'rb') as file:
