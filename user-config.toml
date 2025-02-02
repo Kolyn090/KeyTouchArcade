@@ -19,3 +19,6 @@ crop_top = 38
 crop_left = 0
 crop_bottom = 0
 crop_right = 0
+
+[system-config]
+path = 'system-config.json'

@@ -1,5 +1,4 @@
 import json
-import time
 import tomllib
 import atexit
 from src.read import read_user_config, read_system_config
